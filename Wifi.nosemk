@@ -1,0 +1,42 @@
+# Codigos-Jedaurran
+import network, time, urequests
+from machine import Pin, ADC
+import esp32
+sensor = ADC(Pin(36))
+
+def conectaWifi (red, password):
+    global miRed
+    miRed = network.WLAN(network.STA_IF)
+    if not miRed.isconnected():
+        miRed.active(True)
+        miRed.connect(red, password)
+        print('Conectando a la red', red +"...")
+        timeout = time.time ()
+        while not miRed.isconnected():
+            if (time.ticks_diff (time.time (), timeout) > 10):
+                return False
+    return True
+if conectaWifi ("INFORMATICA2","Adminredp2017"):
+   
+    print("conexion exitosa")
+    print('Datos de la red(IP/netmask/gw/DNS):',miRed.ifconfig())
+   
+    url = "https://maker.ifttt.com/trigger/esp_32/with/key/crH_DrwRkAKbQkHluNDx-Mt1-VB_PeqeavElOp-KHiu"
+   
+while True:
+        temp = esp32.raw_temperature()
+        hall = esp32.hall_sensor()
+        lectura = sensor.read_u16()
+       
+        print("Lectura = {}, Tem = {}, Campo = {}".format (lectura,temp,hall))
+        respuesta = urequests.get(url+"&value1="+str(lectura)+"&value2="+str(temp)+"&value3="+str(hall))
+
+        print(respuesta.text)
+        print (respuesta.status_code)
+        respuesta.close()
+        time.sleep(3)
+     
+           
+else:
+        print ("imposible conectar")
+        miRed.active (False)
